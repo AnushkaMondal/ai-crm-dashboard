@@ -17,4 +17,4 @@ A smart CRM dashboard that:
 - Simulated WooCommerce API
 
 ## Live Demo
-https://your-username.github.io/ai-crm-dashboard/
+https://anushkamondal.github.io/ai-crm-dashboard/
