@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<title>Customer Intelligence Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+body {
+  margin:0;
+  font-family:'Poppins',sans-serif;
+  background: radial-gradient(circle at top,#1a1a2e,#0f0f1a);
+  color:white;
+}
+
+.header {
+  padding:20px;
+  font-size:22px;
+  font-weight:600;
+  color:#8a7dff;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.btn {
+  padding:10px 16px;
+  border:none;
+  border-radius:10px;
+  background:linear-gradient(45deg,#6c63ff,#8a7dff);
+  color:white;
+  cursor:pointer;
+}
+
+/* STATS */
+.stats {
+  display:flex;
+  gap:20px;
+  padding:0 20px;
+}
+
+.stat {
+  flex:1;
+  background:rgba(255,255,255,0.05);
+  border-radius:15px;
+  padding:15px;
+}
+
+/* MAIN */
+.container {
+  display:flex;
+  gap:20px;
+  padding:20px;
+}
+
+.left {
+  width:30%;
+  max-height:75vh;
+  overflow-y:auto;
+}
+
+.card {
+  background:rgba(255,255,255,0.05);
+  padding:15px;
+  margin-bottom:10px;
+  border-radius:12px;
+  cursor:pointer;
+  border-left:4px solid red;
+}
+
+.card.medium { border-color:orange; }
+.card.low { border-color:#00c896; }
+
+.right {
+  width:70%;
+  background:rgba(255,255,255,0.05);
+  border-radius:15px;
+  padding:20px;
+}
+
+.msg {
+  padding:12px;
+  border-radius:12px;
+  margin:10px 0;
+  max-width:70%;
+}
+
+.user { background:#2a2a40; }
+
+.bot {
+  background:#6c63ff;
+  margin-left:auto;
+}
+
+.alert {
+  position:fixed;
+  top:20px;
+  right:20px;
+  background:red;
+  padding:12px 18px;
+  border-radius:10px;
+  display:none;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="header">
+  ⚡ Customer Intelligence Hub
+  <button class="btn" onclick="syncWoo()">🔄 Sync WooCommerce</button>
+</div>
+
+<div class="stats">
+<div class="stat" id="high">🔥 0<br>Urgent Risk</div>
+<div class="stat" id="med">⚠ 0<br>Pending Mid</div>
+<div class="stat" id="low">✅ 0<br>Stable</div>
+</div>
+
+<div class="container">
+
+<div class="left" id="list"></div>
+
+<div class="right">
+<h2 id="name">Select Customer</h2>
+<p id="id"></p>
+<p id="order"></p>
+
+<div id="chat"></div>
+
+<p id="risk"></p>
+<p id="sentiment"></p>
+<p id="insight"></p>
+
+<div id="actions" style="display:none;">
+<button class="btn" onclick="reply()">Send Reply</button>
+<button class="btn" onclick="resolve()">Resolve</button>
+<button class="btn" onclick="escalate()">Escalate</button>
+</div>
+
+<p id="status"></p>
+</div>
+
+</div>
+
+<div class="alert" id="alert">🚨 HIGH RISK CUSTOMER</div>
+
+<script>
+
+let data=[];
+let current=null;
+let idCount=100;
+
+let names=["Ravi","Amit","Priya","Neha","Sara","Arjun"];
+
+let wooMessages=[
+"Refund not received",
+"Order delayed",
+"Very bad service",
+"Tracking issue",
+"Wrong product delivered",
+"Package not arrived"
+];
+
+function rand(a){return a[Math.floor(Math.random()*a.length)];}
+
+/* 🔥 FAKE WOOCOMMERCE API */
+function syncWoo(){
+
+console.log("Fetching from WooCommerce API...");
+
+for(let i=0;i<3;i++){
+data.unshift({
+id:"C"+idCount++,
+order:"O"+Math.floor(Math.random()*9000),
+name:rand(names),
+msg:rand(wooMessages)
+});
+}
+
+render();
+
+document.getElementById("status").innerText="✅ Synced with WooCommerce";
+}
+
+function generateCustomer(){
+
+let msg=rand(wooMessages);
+
+data.unshift({
+id:"C"+idCount++,
+order:"O"+Math.floor(Math.random()*9000),
+name:rand(names),
+msg:msg
+});
+
+render();
+}
+
+function getRisk(msg){
+msg=msg.toLowerCase();
+
+if(msg.includes("refund")||msg.includes("bad")||msg.includes("not arrived"))
+return "high";
+
+if(msg.includes("delayed")||msg.includes("issue"))
+return "medium";
+
+return "low";
+}
+
+function getPriority(r){
+if(r==="high") return 3;
+if(r==="medium") return 2;
+return 1;
+}
+
+function render(){
+
+let list=document.getElementById("list");
+list.innerHTML="";
+
+let high=0,med=0,low=0;
+
+data.sort((a,b)=>{
+return getPriority(getRisk(b.msg)) - getPriority(getRisk(a.msg));
+});
+
+data.forEach((c,i)=>{
+
+let r=getRisk(c.msg);
+
+if(r==="high") high++;
+if(r==="medium") med++;
+if(r==="low") low++;
+
+let div=document.createElement("div");
+div.className="card "+r;
+
+div.innerHTML=`
+<b>${c.name}</b><br>
+ID:${c.id} | Order:${c.order}<br>
+"${c.msg}"
+`;
+
+div.onclick=()=>showDetails(i);
+
+list.appendChild(div);
+});
+
+document.getElementById("high").innerHTML="🔥 "+high+"<br>Urgent Risk";
+document.getElementById("med").innerHTML="⚠ "+med+"<br>Pending Mid";
+document.getElementById("low").innerHTML="✅ "+low+"<br>Stable";
+
+}
+
+function showDetails(i){
+
+current=i;
+let c=data[i];
+
+document.getElementById("name").innerText=c.name;
+document.getElementById("id").innerText="Customer ID: "+c.id;
+document.getElementById("order").innerText="Order ID: "+c.order;
+
+document.getElementById("chat").innerHTML=`
+<div class="msg user">${c.msg}</div>
+<div class="msg bot">We sincerely apologize. We'll resolve this immediately.</div>
+`;
+
+let r=getRisk(c.msg);
+
+document.getElementById("risk").innerText="Risk: "+r;
+document.getElementById("sentiment").innerText="Sentiment: negative";
+document.getElementById("insight").innerText="AI Insight: Possible churn risk";
+
+document.getElementById("actions").style.display="block";
+document.getElementById("status").innerText="";
+
+if(r==="high"){
+let a=document.getElementById("alert");
+a.style.display="block";
+setTimeout(()=>a.style.display="none",2000);
+}
+
+}
+
+function reply(){
+document.getElementById("status").innerText="✅ Reply sent";
+}
+
+function resolve(){
+
+document.getElementById("status").innerText="✅ Issue resolved";
+
+setTimeout(()=>{
+data.splice(current,1);
+clearPanel();
+render();
+},800);
+
+}
+
+function escalate(){
+document.getElementById("status").innerText="🚨 Escalated to support team";
+}
+
+function clearPanel(){
+document.getElementById("name").innerText="Select Customer";
+document.getElementById("id").innerText="";
+document.getElementById("order").innerText="";
+document.getElementById("chat").innerHTML="";
+document.getElementById("risk").innerText="";
+document.getElementById("sentiment").innerText="";
+document.getElementById("insight").innerText="";
+document.getElementById("actions").style.display="none";
+document.getElementById("status").innerText="";
+}
+
+/* AUTO LIVE FEED */
+setInterval(generateCustomer,3000);
+
+render();
+
+</script>
+
+</body>
+</html>
+
